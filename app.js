@@ -5,10 +5,31 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
-var routes = require('./routes/index');
-var users = require('./routes/users');
+var dbConfig = require('./conf.js').db;
+var mongoose = require('mongoose');
+mongoose.connect(dbConfig.url);
 
 var app = express();
+
+// Configuring Passport
+var passport = require('passport');
+var expressSession = require('express-session');
+app.use(expressSession({
+  secret: dbConfig.secret,
+  resave: false,
+  saveUninitialized: false
+}));
+//TODO: research default values
+//TODO: research/implement alternative session stores (NOT MemoryStore)
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Initialize Passport
+var initPassport = require('./passport/init');
+initPassport(passport);
+
+var routes = require('./routes/index')(passport);
+var users = require('./routes/users');
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -55,6 +76,5 @@ app.use(function(err, req, res, next) {
     error: {}
   });
 });
-
 
 module.exports = app;
